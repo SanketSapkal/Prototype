@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Admin Ops Form</title>
+<script type="text/javascript" src="js/jquery-1.7.min.js"></script>
+<script type="text/javascript">
+	var Name = null;
+	var Description = null;
+	//var Image = null;
+	
+	var canvasCtx1 = null;
+	var imageFile1 = null;
+	var url1 = null;
+	var url2 = null;
+	var canvasCtx2 = null
+	
+	window.onload = function() {
+		canvasCtx = document.getElementById("panel1").getContext("2d");
+		
+		document.getElementById("ifile1").onchange = function(event) {
+			
+			this.imageFile = event.target.files[0];
+			
+			var reader = new FileReader();
+			reader.onload =  function(event) {
+				var img = new Image();
+				img.onload = function() {
+					drawImage(img);
+				}
+				img.src = event.target.result;
+			}
+			reader.readAsDataURL(this.imageFile);
+		}
+	
+		drawImage = function(img) {
+			this.canvasCtx.canvas.width = 500;
+			this.canvasCtx.canvas.height = 500;
+			this.canvasCtx.drawImage(img,0,0,500,500);
+			url1 = canvasCtx.canvas.toDataURL("image/png");
+			//console.log(url);
+		}
+	}
+	
+	getData = function() {
+		console.log("Inside get Data");
+		
+		Name = document.getElementById("name").value;
+		if (Name === '') Name = null;
+		
+		Description = document.getElementById("description").value;
+		if (Description === '') Description = null;
+		
+		/*Image = document.getElementById("image").value;
+		if (Image === '') Image = null;*/
+	};
+	
+	Add = function() {
+		console.log("Inside Add function");
+		getData();
+		console.log("Creating json object");
+		
+		var req = {
+				table:"objects",
+				operation:"add",
+				row:{
+					name:Name,
+					description:Description,
+					image:url1
+				},
+				token:"n"
+		}
+		send(req);
+	};
+	
+	DeleteData = function() {
+		console.log("Inside DeleteData function");
+		getData();
+		console.log("Creating json object");
+		
+		var req = {
+				table:"objects",
+				operation:"delete",
+				row:{
+					name:Name,
+					description:Description,
+					image:url1
+				},
+				token:"n"
+		}
+		
+		send(req);
+	}
+	
+	Edit = function() {
+		console.log("Inside Edit function");
+		getData();
+		console.log("Creating json object");
+		
+		var req = {
+				table:"objects",
+				operation:"edit",
+				row:{
+					name:Name,
+					description:Description,
+					image:url1
+				},
+				token:"n"
+		}
+		
+		send(req);
+	}
+	
+	Next = function() {
+		console.log("Inside Next function");
+		getData();
+		console.log("Creating json object");
+		
+		var req = {
+				table:"objects",
+				operation:"next",
+				row:{
+					name:Name,
+					description:Description,
+					image:url1
+				},
+				token:Name
+		}
+		
+		send(req);
+	}
+	
+	Previous = function() {
+		console.log("Inside Previous function");
+		getData();
+		console.log("Creating json object");
+		
+		var req = {
+				table:"objects",
+				operation:"previous",
+				row:{
+					name:Name,
+					description:Description,
+					image:url1
+				},
+				token:Name
+		}
+		
+		send(req);
+	}
+	
+	send = function(req) {
+		canvasCtx2 = document.getElementById("panel2").getContext("2d");
+		console.log("Inside send");
+		$.ajax({
+			url: '/ProtoType/AdminOps',
+			type: 'post',
+			data: {req : JSON.stringify(req)},
+			contentType: "application/x-www-form-urlencoded",
+			dataType: "json",
+			
+			success: function(response) {
+				alert('Working');
+				document.getElementById("Id").value = response.id;
+				document.getElementById("Code").value = response.code;
+				document.getElementById("Message").value = response.message;
+				//if(parseInt(response.Code) === 3 || parseInt(response.Code) === 4) Token = parseInt(response.Id);
+				//console.log(Token);
+				//console.log(response.code)
+				if((response.code) === "NEXT_S" || (response.code) === "PREVIOUS_S"){
+					obj = JSON.parse(response.message);
+					console.log(obj.name);
+					document.getElementById("name1").value = obj.name;
+					document.getElementById("description1").value = obj.description;
+					//document.getElementById("image1").value = obj.image;
+					document.getElementById("date").value = obj.date;
+					
+					url2 = obj.image;
+					
+					var img = new Image();
+					img.onload = function() {
+						drawImage(img);
+					}
+					img.src = url2;
+					
+					drawImage = function(img) {
+						this.canvasCtx2.canvas.width = img.width;
+						this.canvasCtx2.canvas.height = img.height;
+						this.canvasCtx2.drawImage(img,0,0);
+					}
+				}
+				else{
+					document.getElementById("Message").value = response.message;
+				}
+			},
+		
+			error: function() {
+				alert('Not Working');
+			}
+		});
+	};
+</script>
+</head>
+<body>
+	<h1>ADMIN OPS FORM</h1>
+	<form>
+		Name : <input type="text" name="name" id="name"><br/><br/>
+		Description : <input type="text" name="description" id="description"><br/><br/>
+		<input type="file" id="ifile1"><br/>
+		<canvas id="panel1"></canvas><br/><br/>
+		<input type="button" value="Add" onclick="Add()">
+		<input type="button" value="Delete" onclick="DeleteData()">
+		<input type="button" value="Edit" onclick="Edit()">
+		<input type="button" value="Next" onclick="Next()">
+		<input type="button" value="Previous" onclick="Previous()"><br/><br/>
+		
+		<h2> OUTPUT </h2>
+		ID : <input type="text" name="id" id="Id"><br/><br/>
+		Code : <input type="text" name="code" id="Code"><br/><br/>
+		Message : <input type="text" name="message" id="Message"><br/><br/>
+		Name : <input type="text" name="name1" id="name1"><br/><br/>
+		Description : <input type="text" name="description1" id="description1"><br/><br/>
+		Image : 
+		<canvas id="panel2"></canvas>
+		Date : <input type="text" name="date" id="date"><br/><br/>
+	</form>
+</body>
+</html>
